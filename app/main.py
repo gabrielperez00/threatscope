@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from fastapi import HTTPException
 
-INGEST_TOKEN = "letmein123"  # change later
-
+INGEST_TOKEN = os.getenv("THREATSCOPE_TOKEN", "letmein123")
+import os
 import csv, io, re, math
 
 DB_URL = "sqlite:///./threatscope.db"
