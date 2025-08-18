@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime
+from typing import List, Dict, Any
 import requests
 
 from . import models
@@ -61,7 +62,27 @@ def hunt_table(request: Request, db: Session = Depends(get_db)):
         "request": request,
         "events": events
     })
-
+@app.get("/events_geo")
+def events_geo(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
+    rows = (
+        db.query(Event)
+        .filter(Event.geo_lat.isnot(None), Event.geo_lon.isnot(None))
+        .order_by(Event.ts.desc())
+        .limit(2000)
+        .all()
+    )
+    return [
+        {
+            "ts": e.ts.isoformat(),
+            "user": e.user,
+            "host": e.host,
+            "action": e.action,
+            "details": e.details or "",
+            "lat": e.geo_lat,
+            "lon": e.geo_lon,
+        }
+        for e in rows
+    ]
 
 # =====================
 # Detection Rules Logic
