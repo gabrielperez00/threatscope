@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>ThreatScope – Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>#map{height: calc(100vh - 80px);}</style>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <!-- NAVBAR -->
+  <header class="bg-white border-b">
+    <div class="max-w-6xl mx-auto px-6 py-3 flex items-center gap-4">
+      <div class="text-lg font-bold">ThreatScope</div>
+      <nav class="flex gap-4 text-sm">
+        <a href="/" class="text-gray-700 hover:text-black">Home</a>
+        <a href="/hunt" class="text-gray-700 hover:text-black">Hunt</a>
+        <a href="/map" class="text-gray-900 font-semibold">Map</a>
+        <a href="/export_findings.csv" class="text-gray-700 hover:text-black">Export CSV</a>
+      </nav>
+    </div>
+  </header>
+
+  <div id="map" class="mt-0"></div>
+
+  <script>
+  // Center on Florida-ish
+  var map = L.map('map').setView([28.538,-81.379], 6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
+
+  // You can improve this later to use actual event geos.
+  fetch('/findings').then(r=>r.json()).then(list=>{
+    list.forEach(f=>{
+      if (f.rule && f.rule.includes('Impossible travel')) {
+        // Example marker; later you can store lat/lon in the API if you want precise pins
+        L.marker([28.538,-81.379]).addTo(map).bindPopup(f.context);
+      }
+    });
+  });
+  </script>
+</body>
+</html>

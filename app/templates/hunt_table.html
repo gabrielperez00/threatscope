@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-white">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Host</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-gray-200">
+      {% for r in rows %}
+      <tr>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ r.ts }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ r.user }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ r.host }}</td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ r.src_ip }}</td>
+        <td class="px-4 py-2 text-sm">
+          {% if "fail" in r.action %}
+          <span class="px-2 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
+            {{ r.action }}
+          </span>
+          {% else %}
+          <span class="px-2 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
+            {{ r.action }}
+          </span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-2 text-sm text-gray-700">{{ r.details }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</body>
+</html>

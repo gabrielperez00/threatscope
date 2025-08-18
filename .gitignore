@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+
+# venv & local files
+.venv/
+threatscope.db
+
+# OS/editor
+.DS_Store
+Thumbs.db

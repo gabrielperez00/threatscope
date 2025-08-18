@@ -1,0 +1,11 @@
+ts,host,user,src_ip,action,details
+2025-08-17T00:10:00,win10-01,alex,10.0.0.10,login_fail,invalid password
+2025-08-17T00:11:00,win10-01,alex,10.0.0.10,login_fail,invalid password
+2025-08-17T00:12:00,win10-01,alex,10.0.0.10,login_fail,invalid password
+2025-08-17T00:13:00,win10-01,alex,10.0.0.10,login_fail,invalid password
+2025-08-17T00:14:00,win10-01,alex,10.0.0.10,login_fail,invalid password
+2025-08-17T00:16:00,win10-01,alex,10.0.0.10,login_success,interactive logon
+2025-08-17T02:05:00,srv-ad-01,pat,10.0.1.5,login_success,domain admin logon
+2025-08-17T02:10:00,win11-02,jordan,10.0.2.55,powershell,powershell -enc SQBFAFgAIAAvQwA6AFwA
+2025-08-17T02:15:00,laptop-03,sam,100.100.100.10,login_success,successful login from Orlando
+2025-08-17T02:55:00,laptop-03,sam,100.100.100.11,login_success,successful login from Miami
