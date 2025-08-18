@@ -8,11 +8,11 @@ from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from datetime import datetime, timedelta
 from sqlalchemy import func
 from fastapi import HTTPException
-
+import os
 INGEST_TOKEN = os.getenv("THREATSCOPE_TOKEN", "letmein123")
 
 import csv, io, re, math
-import os
+
 DB_URL = "sqlite:///./threatscope.db"
 engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
