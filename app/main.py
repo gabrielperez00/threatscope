@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List, Dict, Any
 import requests
 
-from . import models
+
 from .database import SessionLocal, engine
 from .models import Event, Finding
 
