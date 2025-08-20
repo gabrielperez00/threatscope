@@ -1,24 +1,48 @@
-from fastapi import FastAPI, Depends, Request
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, Request, Depends, UploadFile, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy.orm import Session
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, Float
+from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from datetime import datetime
-from typing import List, Dict, Any
-import requests
+import os, io, csv
 
+# -------------------------------------------------------------------
+# Config
+# -------------------------------------------------------------------
+INGEST_TOKEN = os.getenv("THREATSCOPE_TOKEN", "letmein123")
 
-from .database import SessionLocal, engine
-from .models import Event, Finding
+# -------------------------------------------------------------------
+# Database setup (inline, no external imports)
+# -------------------------------------------------------------------
+DB_URL = "sqlite:///./threatscope.db"
+engine = create_engine(DB_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+Base = declarative_base()
 
-models.Base.metadata.create_all(bind=engine)
+class Event(Base):
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True, index=True)
+    ts = Column(DateTime, index=True)
+    host = Column(String, index=True)
+    user = Column(String, index=True)
+    src_ip = Column(String, index=True)
+    action = Column(String, index=True)
+    details = Column(Text)
+    geo_lat = Column(Float, nullable=True)
+    geo_lon = Column(Float, nullable=True)
 
-app = FastAPI()
+class Finding(Base):
+    __tablename__ = "findings"
+    id = Column(Integer, primary_key=True, index=True)
+    ts = Column(DateTime, index=True)
+    user = Column(String, index=True)
+    host = Column(String, index=True)
+    rule = Column(String, index=True)
+    severity = Column(String, index=True)
+    context = Column(Text)
 
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
-templates = Jinja2Templates(directory="app/templates")
+Base.metadata.create_all(engine)
 
 def get_db():
     db = SessionLocal()
@@ -27,171 +51,85 @@ def get_db():
     finally:
         db.close()
 
+# -------------------------------------------------------------------
+# FastAPI app
+# -------------------------------------------------------------------
+app = FastAPI()
+
+# Ensure dirs exist for Render
+os.makedirs("app/static", exist_ok=True)
+os.makedirs("app/templates", exist_ok=True)
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+templates = Jinja2Templates(directory="app/templates")
+
+# -------------------------------------------------------------------
+# Routes
+# -------------------------------------------------------------------
 @app.get("/", response_class=HTMLResponse)
-def home(request: Request, db: Session = Depends(get_db)):
-    total_events = db.query(Event).count()
-    total_findings = db.query(Finding).count()
-    findings = db.query(Finding).order_by(Finding.ts.desc()).limit(5).all()
-    return templates.TemplateResponse("dashboard.html", {
-        "request": request,
-        "total_events": total_events,
-        "total_findings": total_findings,
-        "findings": findings
-    })
-
-@app.get("/hunt", response_class=HTMLResponse)
-def hunt(request: Request, db: Session = Depends(get_db)):
-    events = db.query(Event).order_by(Event.ts.desc()).all()
-    return templates.TemplateResponse("hunt.html", {
-        "request": request,
-        "events": events
-    })
-
-@app.get("/map", response_class=HTMLResponse)
-def map_view(request: Request, db: Session = Depends(get_db)):
-    events = db.query(Event).order_by(Event.ts.desc()).all()
-    return templates.TemplateResponse("map.html", {
-        "request": request,
-        "events": events
-    })
-
-@app.get("/hunt_table")
-def hunt_table(request: Request, db: Session = Depends(get_db)):
-    events = db.query(Event).order_by(Event.ts.desc()).all()
-    return templates.TemplateResponse("hunt_table.html", {
-        "request": request,
-        "events": events
-    })
-@app.get("/events_geo")
-def events_geo(db: Session = Depends(get_db)) -> List[Dict[str, Any]]:
-    rows = (
-        db.query(Event)
-        .filter(Event.geo_lat.isnot(None), Event.geo_lon.isnot(None))
-        .order_by(Event.ts.desc())
-        .limit(2000)
-        .all()
+def index(request: Request, db: Session = Depends(get_db)):
+    events = db.query(Event).order_by(Event.ts.desc()).limit(10).all()
+    findings = db.query(Finding).order_by(Finding.ts.desc()).limit(10).all()
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request, "events": events, "findings": findings},
     )
+
+@app.post("/ingest_json")
+async def ingest_json(payload: dict, request: Request, db: Session = Depends(get_db)):
+    token = request.headers.get("Authorization", "").replace("Bearer ", "")
+    if token != INGEST_TOKEN:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    try:
+        evt = Event(
+            ts=datetime.fromisoformat(payload.get("ts")),
+            host=payload.get("host"),
+            user=payload.get("user"),
+            src_ip=payload.get("src_ip"),
+            action=payload.get("action"),
+            details=payload.get("details"),
+        )
+        db.add(evt)
+        db.commit()
+        db.refresh(evt)
+        return {"status": "ok", "id": evt.id}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Bad payload: {e}")
+
+@app.get("/events", response_class=JSONResponse)
+def list_events(db: Session = Depends(get_db)):
+    rows = db.query(Event).order_by(Event.ts.desc()).limit(100).all()
     return [
         {
-            "ts": e.ts.isoformat(),
-            "user": e.user,
+            "id": e.id,
+            "ts": e.ts.isoformat() if e.ts else None,
             "host": e.host,
+            "user": e.user,
+            "src_ip": e.src_ip,
             "action": e.action,
-            "details": e.details or "",
-            "lat": e.geo_lat,
-            "lon": e.geo_lon,
+            "details": e.details,
         }
         for e in rows
     ]
 
-# =====================
-# Detection Rules Logic
-# =====================
+@app.get("/events_csv")
+def events_csv(db: Session = Depends(get_db)):
+    rows = db.query(Event).order_by(Event.ts.desc()).all()
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["id", "ts", "host", "user", "src_ip", "action", "details"])
+    for e in rows:
+        writer.writerow([e.id, e.ts, e.host, e.user, e.src_ip, e.action, e.details])
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=events.csv"},
+    )
 
-def run_rules(db: Session):
-    events = db.query(Event).order_by(Event.ts).all()
-    if not events:
-        return
-
-    # 1) Off hour login (TA0006/Valid Accounts)
-    for e in events:
-        if e.action == "login_success":
-            if e.ts.hour < 6 or e.ts.hour > 22:
-                db.add(Finding(
-                    ts=e.ts,
-                    user=e.user,
-                    host=e.host,
-                    rule="Off hour login (TA0006/Valid Accounts)",
-                    severity="Low",
-                    context="user logged in outside 06:00–22:00"
-                ))
-
-    # 2) Brute force success (TA0006/T1110)
-    failures = {}
-    for e in events:
-        if e.action == "login_failure":
-            failures.setdefault((e.user, e.src_ip), []).append(e)
-        if e.action == "login_success":
-            if (e.user, e.src_ip) in failures and len(failures[(e.user, e.src_ip)]) >= 5:
-                db.add(Finding(
-                    ts=e.ts,
-                    user=e.user,
-                    host=e.host,
-                    rule="Brute force success (TA0006/T1110)",
-                    severity="High",
-                    context=f"{len(failures[(e.user, e.src_ip)])} prior failures from {e.src_ip}"
-                ))
-
-    # 3) Suspicious PowerShell encoded (TA0002/T1059.001)
-    for e in events:
-        if "powershell" in (e.details or "").lower() and "-enc" in (e.details or "").lower():
-            db.add(Finding(
-                ts=e.ts,
-                user=e.user,
-                host=e.host,
-                rule="Suspicious PowerShell encoded (TA0002/T1059.001)",
-                severity="High",
-                context=e.details
-            ))
-
-    # 4) Impossible travel (TA0006/Account Use Anomaly)
-    last_login = {}
-    loc_cache = {}
-    for e in events:
-        if e.action == "login_success" and e.src_ip:
-            last = last_login.get(e.user)
-            if e.src_ip not in loc_cache:
-                try:
-                    resp = requests.get(f"https://ipapi.co/{e.src_ip}/json/").json()
-                    loc_cache[e.src_ip] = resp.get("country_name")
-                except:
-                    loc_cache[e.src_ip] = None
-            loc = loc_cache[e.src_ip]
-            if last:
-                last_loc, last_time = last
-                if loc and last_loc and loc != last_loc and (e.ts - last_time).total_seconds() < 3600:
-                    db.add(Finding(
-                        ts=e.ts,
-                        user=e.user,
-                        host=e.host,
-                        rule="Impossible travel (TA0006/Account Use Anomaly)",
-                        severity="Medium",
-                        context=f"{e.src_ip}={loc}, previous={last_loc} {last_time}"
-                    ))
-            last_login[e.user] = (loc, e.ts)
-
-    # 5) Lateral movement (TA0008)
-    user_hosts = {}
-    for e in events:
-        if e.action == "login_success":
-            prev = user_hosts.setdefault(e.user, set())
-            if e.host not in prev and len(prev) >= 2:
-                db.add(Finding(
-                    ts=e.ts,
-                    user=e.user,
-                    host=e.host,
-                    rule="Lateral movement (TA0008)",
-                    severity="Medium",
-                    context=f"user previously logged into {', '.join(list(prev)[:3])}"
-                ))
-            prev.add(e.host)
-
-    # 6) New host for user (TA0008)
-    seen_hosts = {}
-    for e in events:
-        if e.action == "login_success":
-            prev = seen_hosts.setdefault(e.user, set())
-            if e.host not in prev:
-                sev = "Low" if len(prev) == 0 else "Medium"
-                note = "first observed host for user" if len(prev) == 0 else f"new host (previous: {', '.join(list(prev)[:3])})"
-                db.add(Finding(
-                    ts=e.ts,
-                    user=e.user,
-                    host=e.host,
-                    rule="New host for user (TA0008)",
-                    severity=sev,
-                    context=note
-                ))
-                prev.add(e.host)
-
-    db.commit()
+@app.get("/events_geo", response_class=JSONResponse)
+def events_geo(db: Session = Depends(get_db)):
+    rows = db.query(Event).filter(Event.geo_lat != None).all()
+    return [
+        {"lat": e.geo_lat, "lon": e.geo_lon, "user": e.user, "host": e.host, "action": e.action}
+        for e in rows
+    ]
