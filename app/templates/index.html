@@ -1,235 +1,111 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ThreatScope – Dashboard</title>
-  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <link href="/static/site.css" rel="stylesheet">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ThreatScope</title>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-  <!-- HEADER / NAV -->
-  <header class="border-b bg-gradient-to-r from-gray-900 to-indigo-800 text-white">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
-      <div class="text-xl font-bold tracking-wide">ThreatScope</div>
+<body class="bg-gray-100 text-gray-900">
 
-      <!-- Desktop nav -->
-      <nav class="hidden md:flex gap-4 text-sm opacity-90">
-        <a href="/" class="hover:underline">Home</a>
-        <a href="/hunt" class="hover:underline">Hunt</a>
-        <a href="/map" class="hover:underline">Map</a>
-        <a href="/export_findings.csv" class="hover:underline">Export CSV</a>
-      </nav>
-
-      <!-- Dark toggle (desktop) -->
-      <button id="darkToggle" class="ml-auto hidden md:inline-block px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20">
-        Toggle dark
-      </button>
-
-      <!-- Mobile hamburger -->
-      <button id="menuBtn" class="ml-auto md:hidden p-2 rounded bg-white/10" aria-label="Open menu">☰</button>
+  <!-- Navbar -->
+  <nav class="bg-gray-900 text-white p-4 flex justify-between">
+    <div class="font-bold text-lg">ThreatScope</div>
+    <div class="space-x-4">
+      <a href="/" class="hover:underline">Dashboard</a>
+      <a href="/map" class="hover:underline">Map</a>
+      <a href="/rules" class="hover:underline">Rules</a>
+      <a href="/hunts" class="hover:underline">Hunts</a>
     </div>
+  </nav>
 
-    <!-- Mobile nav -->
-    <nav id="mobileNav" class="md:hidden hidden px-4 sm:px-6 pb-4 text-sm opacity-95">
-      <div class="flex flex-col gap-2">
-        <a href="/" class="hover:underline">Home</a>
-        <a href="/hunt" class="hover:underline">Hunt</a>
-        <a href="/map" class="hover:underline">Map</a>
-        <a href="/export_findings.csv" class="hover:underline">Export CSV</a>
-        <button id="darkToggleM" class="mt-2 px-3 py-1 w-max text-sm rounded bg-white/10 hover:bg-white/20">
-          Toggle dark
-        </button>
-      </div>
-    </nav>
-  </header>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script>
-  // Ensure only one chart instance exists
-  window.tsCharts = window.tsCharts || {};
-  (async function () {
-    try {
-      const el = document.getElementById('ruleChart');
-      if (!el) return;
-      const ctx = el.getContext('2d');
+  <main class="max-w-6xl mx-auto p-4">
 
-      // Destroy existing chart if it already exists
-      if (window.tsCharts.ruleChart && typeof window.tsCharts.ruleChart.destroy === 'function') {
-        window.tsCharts.ruleChart.destroy();
-      }
-
-      const res = await fetch('/stats');
-      const data = await res.json();
-      const labels = (data.by_rule || []).map(x => x.rule);
-      const counts = (data.by_rule || []).map(x => x.count);
-
-      window.tsCharts.ruleChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-          labels,
-          datasets: [{ label: 'Findings', data: counts }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          scales: { y: { beginAtZero: true, precision: 0 } },
-          plugins: { legend: { display: false } }
-        }
-      });
-    } catch (e) {
-      console.error('stats fetch failed', e);
-    }
-  })();
-</script>
-
-  <!-- MAIN -->
-  <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-    <!-- HERO -->
-    <section class="mb-6">
-      <h1 class="text-3xl font-semibold">SOC Dashboard</h1>
-      <p class="opacity-90 mt-1">Hunt signals, visualize detections, and export reports.</p>
+    <!-- Findings Table -->
+    <section class="bg-white p-4 shadow rounded mb-8 overflow-x-auto">
+      <h2 class="text-lg font-semibold mb-4">Latest Findings</h2>
+      <table class="table-auto w-full text-sm">
+        <thead>
+          <tr class="bg-gray-200 text-left">
+            <th class="px-2 py-1">Timestamp</th>
+            <th class="px-2 py-1">Host</th>
+            <th class="px-2 py-1">User</th>
+            <th class="px-2 py-1">Source IP</th>
+            <th class="px-2 py-1">Action</th>
+            <th class="px-2 py-1">Details</th>
+            <th class="px-2 py-1">Severity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for f in latest %}
+          <tr class="border-b">
+            <td class="px-2 py-1">{{ f.ts }}</td>
+            <td class="px-2 py-1">{{ f.host }}</td>
+            <td class="px-2 py-1">{{ f.user }}</td>
+            <td class="px-2 py-1">{{ f.src_ip }}</td>
+            <td class="px-2 py-1">{{ f.action }}</td>
+            <td class="px-2 py-1">{{ f.details }}</td>
+            <td class="px-2 py-1">
+              {% if f.severity == "high" %}
+                <span class="bg-red-500 text-white text-xs px-2 py-1 rounded">High</span>
+              {% elif f.severity == "medium" %}
+                <span class="bg-yellow-500 text-black text-xs px-2 py-1 rounded">Medium</span>
+              {% elif f.severity == "low" %}
+                <span class="bg-green-500 text-white text-xs px-2 py-1 rounded">Low</span>
+              {% else %}
+                <span class="bg-gray-400 text-white text-xs px-2 py-1 rounded">Info</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
     </section>
 
-    <!-- STAT CARDS -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-      <div class="card p-5">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total events</div>
-        <div class="text-3xl font-semibold">{{ total_events }}</div>
-      </div>
-      <div class="card p-5">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total findings</div>
-        <div class="text-3xl font-semibold">{{ total_findings }}</div>
+    <!-- Findings by Rule Chart -->
+    <section class="bg-white p-4 shadow rounded">
+      <h2 class="text-lg font-semibold mb-4">Findings by Rule</h2>
+      <div class="h-80">
+        <canvas id="ruleChart"></canvas>
       </div>
     </section>
-<form action="/seed_demo" method="post" class="mb-4">
-  <button
-    type="submit"
-    class="px-4 py-2 rounded border border-gray-300 bg-white hover:bg-gray-50
-           dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
-    Load demo data
-  </button>
-</form>
-    <!-- LATEST FINDINGS -->
-    <section class="card p-4">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-semibold">Latest findings</h2>
-        <a href="/export_findings.csv" class="text-sm underline">Export CSV</a>
-      </div>
 
-      <div class="overflow-x-auto -mx-2 sm:mx-0">
-        <table class="table striped min-w-full text-sm">
-          <thead>
-            <tr class="text-left border-b border-gray-200 dark:border-gray-700">
-              <th class="px-4 py-2">Time</th>
-              <th class="px-4 py-2">Rule</th>
-              <th class="px-4 py-2">Severity</th>
-              <th class="px-4 py-2 hidden sm:table-cell">Context</th>
-              <th class="px-4 py-2 hidden md:table-cell">User</th>
-              <th class="px-4 py-2 hidden md:table-cell">Host</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
-            {% for f in latest %}
-            <tr>
-              <td class="px-4 py-2">{{ f.ts }}</td>
-              <td class="px-4 py-2">{{ f.rule }}</td>
-              <td class="px-4 py-2">
-                {% if f.severity == 'High' %}
-                  <span class="badge badge-high">High</span>
-                {% elif f.severity == 'Medium' %}
-                  <span class="badge badge-medium">Medium</span>
-                {% else %}
-                  <span class="badge badge-low">{{ f.severity }}</span>
-                {% endif %}
-              </td>
-              <td class="px-4 py-2 hidden sm:table-cell">{{ f.context }}</td>
-              <td class="px-4 py-2 hidden md:table-cell">{{ f.user }}</td>
-              <td class="px-4 py-2 hidden md:table-cell">{{ f.host }}</td>
-            </tr>
-<!-- Findings by Rule -->
-<section class="card p-4 mt-6">
-  <div class="flex items-center justify-between mb-2">
-    <h2 class="text-lg font-semibold">Findings by rule</h2>
-  </div>
-  <div class="w-full overflow-x-auto">
-    <canvas id="ruleChart" height="120"></canvas>
-  </div>
-</section>
-
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
-<script>
-(async function () {
-  try {
-    const res = await fetch('/stats');
-    const data = await res.json();
-    const labels = (data.by_rule || []).map(x => x.rule);
-    const counts = (data.by_rule || []).map(x => x.count);
-
-    const ctx = document.getElementById('ruleChart').getContext('2d');
-    new Chart(ctx, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Findings',
-          data: counts
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-          x: { ticks: { maxRotation: 45, minRotation: 0 } },
-          y: { beginAtZero: true, precision: 0 }
-        },
-        plugins: {
-          legend: { display: false },
-          tooltip: { mode: 'index', intersect: false }
-        }
-      }
-    });
-  } catch (e) {
-    console.error('stats fetch failed', e);
-  }
-})();
-</script>
-
-            <!-- Mobile-only stacked extras -->
-            <tr class="sm:hidden">
-              <td colspan="3" class="px-4 pb-4 pt-0 text-xs text-gray-600 dark:text-gray-300">
-                <div><span class="font-semibold">User:</span> {{ f.user }}</div>
-                <div><span class="font-semibold">Host:</span> {{ f.host }}</div>
-                <div class="mt-1"><span class="font-semibold">Context:</span> {{ f.context }}</div>
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </section>
   </main>
 
-  <!-- SCRIPTS -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script>
-    // Mobile menu toggle
-    document.getElementById('menuBtn')?.addEventListener('click', ()=>{
-      const m = document.getElementById('mobileNav');
-      m.classList.toggle('hidden');
-    });
+    window.tsCharts = window.tsCharts || {};
+    (async function () {
+      try {
+        const el = document.getElementById('ruleChart');
+        if (!el) return;
+        const ctx = el.getContext('2d');
 
-    // Dark mode persistence (desktop & mobile buttons)
-    (function(){
-      const k='ts.dark';
-      const root = document.documentElement;
-      if(localStorage.getItem(k)==='1') root.classList.add('dark');
-      function tog(){
-        root.classList.toggle('dark');
-        localStorage.setItem(k, root.classList.contains('dark') ? '1' : '0');
+        if (window.tsCharts.ruleChart && typeof window.tsCharts.ruleChart.destroy === 'function') {
+          window.tsCharts.ruleChart.destroy();
+        }
+
+        const res = await fetch('/stats');
+        const data = await res.json();
+        const labels = (data.by_rule || []).map(x => x.rule);
+        const counts = (data.by_rule || []).map(x => x.count);
+
+        window.tsCharts.ruleChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels,
+            datasets: [{ label: 'Findings', data: counts }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: { y: { beginAtZero: true, precision: 0 } },
+            plugins: { legend: { display: false } }
+          }
+        });
+      } catch (e) {
+        console.error('stats fetch failed', e);
       }
-      document.getElementById('darkToggle')?.addEventListener('click', tog);
-      document.getElementById('darkToggleM')?.addEventListener('click', tog);
     })();
   </script>
 </body>
