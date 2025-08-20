@@ -3,41 +3,105 @@
 <head>
   <meta charset="utf-8">
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="/static/site.css" rel="stylesheet">
 </head>
-<body class="bg-white">
-  <table class="min-w-full divide-y divide-gray-200">
-    <thead class="bg-gray-50">
-      <tr>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Host</th>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-gray-200">
-      {% for r in rows %}
-      <tr>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ r.ts }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ r.user }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ r.host }}</td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ r.src_ip }}</td>
-        <td class="px-4 py-2 text-sm">
-          {% if "fail" in r.action %}
-          <span class="px-2 inline-flex text-xs font-semibold rounded-full bg-red-100 text-red-800">
-            {{ r.action }}
-          </span>
-          {% else %}
-          <span class="px-2 inline-flex text-xs font-semibold rounded-full bg-green-100 text-green-800">
-            {{ r.action }}
-          </span>
-          {% endif %}
-        </td>
-        <td class="px-4 py-2 text-sm text-gray-700">{{ r.details }}</td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+<body class="bg-white dark:bg-gray-900">
+  <div class="p-3">
+    <div class="flex gap-2 mb-3">
+      <input id="flt" placeholder="Filter details…" class="border rounded px-2 py-1 w-64 dark:bg-gray-800 dark:border-gray-700">
+      <select id="pagesize" class="border rounded px-2 py-1 dark:bg-gray-800 dark:border-gray-700">
+        <option>25</option><option selected>50</option><option>100</option>
+      </select>
+      <div class="ml-auto text-sm text-gray-500 dark:text-gray-400" id="meta"></div>
+    </div>
+
+    <div class="overflow-auto border rounded dark:border-gray-800">
+      <table id="tbl" class="table striped min-w-full text-sm">
+        <thead>
+          <tr class="text-left border-b border-gray-200 dark:border-gray-800">
+            <th class="px-4 py-2 cursor-pointer" data-k="ts">Time ▲▼</th>
+            <th class="px-4 py-2 cursor-pointer" data-k="user">User ▲▼</th>
+            <th class="px-4 py-2 cursor-pointer" data-k="host">Host ▲▼</th>
+            <th class="px-4 py-2 cursor-pointer" data-k="src_ip">IP ▲▼</th>
+            <th class="px-4 py-2 cursor-pointer" data-k="action">Action ▲▼</th>
+            <th class="px-4 py-2">Details</th>
+          </tr>
+        </thead>
+        <tbody id="body" class="divide-y divide-gray-200 dark:divide-gray-800">
+          {% for r in rows %}
+          <tr data-json='{"ts":"{{ r.ts }}","user":"{{ r.user }}","host":"{{ r.host }}","src_ip":"{{ r.src_ip }}","action":"{{ r.action }}","details":"{{ (r.details or "").replace("\"","'") }}"}'>
+            <td class="px-4 py-2 text-gray-700 dark:text-gray-200">{{ r.ts }}</td>
+            <td class="px-4 py-2 text-gray-700 dark:text-gray-200">{{ r.user }}</td>
+            <td class="px-4 py-2 text-gray-700 dark:text-gray-200">{{ r.host }}</td>
+            <td class="px-4 py-2 text-gray-700 dark:text-gray-200">{{ r.src_ip }}</td>
+            <td class="px-4 py-2">
+              {% if "fail" in r.action %}
+              <span class="badge badge-high">{{ r.action }}</span>
+              {% else %}
+              <span class="badge badge-low">{{ r.action }}</span>
+              {% endif %}
+            </td>
+            <td class="px-4 py-2 text-gray-700 dark:text-gray-200">{{ r.details }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="flex items-center gap-2 mt-3">
+      <button id="prev" class="px-3 py-1 rounded border dark:border-gray-700">Prev</button>
+      <button id="next" class="px-3 py-1 rounded border dark:border-gray-700">Next</button>
+      <div id="page" class="text-sm text-gray-500 dark:text-gray-400"></div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const rows = Array.from(document.querySelectorAll('#body tr')).map(tr => {
+      const data = JSON.parse(tr.getAttribute('data-json'));
+      return { el: tr, ...data };
+    });
+
+    let sortKey = 'ts', sortDir = -1, page = 1, pageSize = parseInt(document.getElementById('pagesize').value), filter = '';
+
+    function apply(){
+      // filter
+      const filtered = rows.filter(r => (r.details || '').toLowerCase().includes(filter));
+      // sort
+      filtered.sort((a,b)=>{
+        let av=a[sortKey]||'', bv=b[sortKey]||'';
+        if(sortKey==='ts'){ av = new Date(av).getTime(); bv = new Date(bv).getTime(); }
+        return (av>bv?1:av<bv?-1:0)*sortDir;
+      });
+      // paginate
+      const total = filtered.length;
+      const pages = Math.max(1, Math.ceil(total / pageSize));
+      page = Math.min(page, pages);
+      const start = (page-1)*pageSize, end = start + pageSize;
+
+      // render
+      const body = document.getElementById('body');
+      body.innerHTML = '';
+      filtered.slice(start, end).forEach(r => body.appendChild(r.el));
+
+      document.getElementById('page').textContent = `Page ${page}/${pages}`;
+      document.getElementById('meta').textContent = `${total} rows`;
+    }
+
+    document.getElementById('pagesize').addEventListener('change', e => { pageSize = parseInt(e.target.value); page = 1; apply(); });
+    document.getElementById('prev').addEventListener('click', ()=>{ if(page>1){ page--; apply(); }});
+    document.getElementById('next').addEventListener('click', ()=>{ page++; apply(); });
+    document.getElementById('flt').addEventListener('input', e => { filter = (e.target.value||'').toLowerCase(); page=1; apply(); });
+    document.querySelectorAll('th[data-k]').forEach(th=>{
+      th.addEventListener('click', ()=>{
+        const k = th.dataset.k;
+        if (sortKey===k) sortDir *= -1; else { sortKey = k; sortDir = (k==='ts'?-1:1); }
+        apply();
+      });
+    });
+
+    apply();
+  })();
+  </script>
 </body>
 </html>

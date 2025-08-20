@@ -1,1 +1,34 @@
-/* ThreatScope styles */
+/* ThreatScope minimal theme */
+:root { --card: #ffffff; --muted:#6b7280; --ring:#e5e7eb; }
+.dark :root { --card:#0f172a; --muted:#94a3b8; --ring:#1f2937; }
+.card { background: var(--card); border:1px solid var(--ring); border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+.badge { padding:.125rem .5rem; border-radius:.375rem; font-size:.75rem; font-weight:600; }
+.badge-high{ background:#fee2e2; color:#b91c1c; } .dark .badge-high{ background:#7f1d1d; color:#fecaca;}
+.badge-medium{ background:#fef3c7; color:#a16207; } .dark .badge-medium{ background:#78350f; color:#fde68a;}
+.badge-low{ background:#dcfce7; color:#166534; } .dark .badge-low{ background:#064e3b; color:#bbf7d0;}
+.table thead th{ position:sticky; top:0; background:#f9fafb; }
+.dark .table thead th{ background:#0b1220; }
+.striped tbody tr:nth-child(even){ background:#f9fafb; }
+.dark .striped tbody tr:nth-child(even){ background:#0b1220; }
+.link { color:#111827; } .link:hover{ text-decoration:underline; }
+.dark .link{ color:#e5e7eb; }
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+.dark .card { background:#0f172a; border-color:#1f2937; }
+.badge { padding:.125rem .5rem; border-radius:.375rem; font-size:.75rem; font-weight:600; white-space:nowrap; }
+.badge-high{ background:#fee2e2; color:#b91c1c; } .dark .badge-high{ background:#7f1d1d; color:#fecaca;}
+.badge-medium{ background:#fef3c7; color:#a16207; } .dark .badge-medium{ background:#78350f; color:#fde68a;}
+.badge-low{ background:#dcfce7; color:#166534; } .dark .badge-low{ background:#064e3b; color:#bbf7d0;}
+.table thead th{ position:sticky; top:0; background:#f9fafb; }
+.dark .table thead th{ background:#0b1220; }
+.striped tbody tr:nth-child(even){ background:#f9fafb; }
+.dark .striped tbody tr:nth-child(even){ background:#0b1220; }
+.card { background:#fff; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,.05); }
+.dark .card { background:#0f172a; border-color:#1f2937; }
+.badge { padding:.125rem .5rem; border-radius:.375rem; font-size:.75rem; font-weight:600; white-space:nowrap; }
+.badge-high{ background:#fee2e2; color:#b91c1c; } .dark .badge-high{ background:#7f1d1d; color:#fecaca;}
+.badge-medium{ background:#fef3c7; color:#a16207; } .dark .badge-medium{ background:#78350f; color:#fde68a;}
+.badge-low{ background:#dcfce7; color:#166534; } .dark .badge-low{ background:#064e3b; color:#bbf7d0;}
+.table thead th{ position:sticky; top:0; background:#f9fafb; }
+.dark .table thead th{ background:#0b1220; }
+.striped tbody tr:nth-child(even){ background:#f9fafb; }
+.dark .striped tbody tr:nth-child(even){ background:#0b1220; }
