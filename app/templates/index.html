@@ -109,6 +109,55 @@
               <td class="px-4 py-2 hidden md:table-cell">{{ f.user }}</td>
               <td class="px-4 py-2 hidden md:table-cell">{{ f.host }}</td>
             </tr>
+<!-- Findings by Rule -->
+<section class="card p-4 mt-6">
+  <div class="flex items-center justify-between mb-2">
+    <h2 class="text-lg font-semibold">Findings by rule</h2>
+  </div>
+  <div class="w-full overflow-x-auto">
+    <canvas id="ruleChart" height="120"></canvas>
+  </div>
+</section>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(async function () {
+  try {
+    const res = await fetch('/stats');
+    const data = await res.json();
+    const labels = (data.by_rule || []).map(x => x.rule);
+    const counts = (data.by_rule || []).map(x => x.count);
+
+    const ctx = document.getElementById('ruleChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Findings',
+          data: counts
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          x: { ticks: { maxRotation: 45, minRotation: 0 } },
+          y: { beginAtZero: true, precision: 0 }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        }
+      }
+    });
+  } catch (e) {
+    console.error('stats fetch failed', e);
+  }
+})();
+</script>
+
             <!-- Mobile-only stacked extras -->
             <tr class="sm:hidden">
               <td colspan="3" class="px-4 pb-4 pt-0 text-xs text-gray-600 dark:text-gray-300">
