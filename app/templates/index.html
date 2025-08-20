@@ -44,6 +44,44 @@
       </div>
     </nav>
   </header>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+  // Ensure only one chart instance exists
+  window.tsCharts = window.tsCharts || {};
+  (async function () {
+    try {
+      const el = document.getElementById('ruleChart');
+      if (!el) return;
+      const ctx = el.getContext('2d');
+
+      // Destroy existing chart if it already exists
+      if (window.tsCharts.ruleChart && typeof window.tsCharts.ruleChart.destroy === 'function') {
+        window.tsCharts.ruleChart.destroy();
+      }
+
+      const res = await fetch('/stats');
+      const data = await res.json();
+      const labels = (data.by_rule || []).map(x => x.rule);
+      const counts = (data.by_rule || []).map(x => x.count);
+
+      window.tsCharts.ruleChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: 'Findings', data: counts }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { y: { beginAtZero: true, precision: 0 } },
+          plugins: { legend: { display: false } }
+        }
+      });
+    } catch (e) {
+      console.error('stats fetch failed', e);
+    }
+  })();
+</script>
 
   <!-- MAIN -->
   <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
