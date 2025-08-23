@@ -32,3 +32,25 @@
 .dark .table thead th{ background:#0b1220; }
 .striped tbody tr:nth-child(even){ background:#f9fafb; }
 .dark .striped tbody tr:nth-child(even){ background:#0b1220; }
+/* Simple utility styles used by templates */
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Table look */
+.table.striped tbody tr:nth-child(odd) { background-color: #f9fafb; }
+
+/* Severity badges */
+.badge {
+  display: inline-block;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  line-height: 1.25rem;
+}
+.badge-high { background: #ef4444; color: white; }
+.badge-medium { background: #f59e0b; color: #111827; }
+.badge-low { background: #10b981; color: white; }

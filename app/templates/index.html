@@ -8,88 +8,61 @@
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <link href="/static/site.css" rel="stylesheet">
 </head>
-<body class="bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-  <!-- HEADER / NAV -->
-  <header class="border-b bg-gradient-to-r from-gray-900 to-indigo-800 text-white">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-3">
+<body class="bg-gray-50 text-gray-900">
+  <!-- Header -->
+  <header class="border-b bg-gray-900 text-white">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex items-center gap-4">
       <div class="text-xl font-bold tracking-wide">ThreatScope</div>
-
-      <!-- Desktop nav -->
-      <nav class="hidden md:flex gap-4 text-sm opacity-90">
-        <a href="/" class="hover:underline">Home</a>
-        <a href="/hunt" class="hover:underline">Hunt</a>
-        <a href="/map" class="hover:underline">Map</a>
-        <a href="/export_findings.csv" class="hover:underline">Export CSV</a>
+      <nav class="text-sm space-x-4">
+        <a href="/" class="opacity-100 underline">Home</a>
+        <a href="/hunt" class="opacity-90 hover:opacity-100">Hunt</a>
+        <a href="/map" class="opacity-90 hover:opacity-100">Map</a>
       </nav>
-
-      <!-- Dark toggle (desktop) -->
-      <button id="darkToggle" class="ml-auto hidden md:inline-block px-3 py-1 text-sm rounded bg-white/10 hover:bg-white/20">
-        Toggle dark
-      </button>
-
-      <!-- Mobile hamburger -->
-      <button id="menuBtn" class="ml-auto md:hidden p-2 rounded bg-white/10" aria-label="Open menu">☰</button>
-    </div>
-
-    <!-- Mobile nav -->
-    <nav id="mobileNav" class="md:hidden hidden px-4 sm:px-6 pb-4 text-sm opacity-95">
-      <div class="flex flex-col gap-2">
-        <a href="/" class="hover:underline">Home</a>
-        <a href="/hunt" class="hover:underline">Hunt</a>
-        <a href="/map" class="hover:underline">Map</a>
-        <a href="/export_findings.csv" class="hover:underline">Export CSV</a>
-        <button id="darkToggleM" class="mt-2 px-3 py-1 w-max text-sm rounded bg-white/10 hover:bg-white/20">
-          Toggle dark
-        </button>
+      <div class="ml-auto flex items-center gap-3 text-sm">
+        <a href="/export_findings.csv" class="underline">Export CSV</a>
+        <form action="/export_to_splunk" method="post" class="inline">
+          <button class="underline">Export to Splunk</button>
+        </form>
       </div>
-    </nav>
+    </div>
   </header>
 
-  <!-- MAIN -->
   <main class="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-    <!-- HERO -->
     <section class="mb-6">
       <h1 class="text-3xl font-semibold">SOC Dashboard</h1>
       <p class="opacity-90 mt-1">Hunt signals, visualize detections, and export reports.</p>
     </section>
 
-    <!-- STAT CARDS -->
+    <!-- Stat cards -->
     <section class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
       <div class="card p-5">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total events</div>
+        <div class="text-sm text-gray-500">Total events</div>
         <div class="text-3xl font-semibold">{{ total_events }}</div>
       </div>
       <div class="card p-5">
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total findings</div>
+        <div class="text-sm text-gray-500">Total findings</div>
         <div class="text-3xl font-semibold">{{ total_findings }}</div>
       </div>
     </section>
 
-    <!-- LOAD DEMO DATA BUTTON -->
+    <!-- Load demo data -->
     <form action="/seed_demo" method="post" class="mb-6">
-      <button
-        type="submit"
-        class="px-4 py-2 rounded border border-gray-300 bg-white hover:bg-gray-50
-               dark:border-gray-700 dark:bg-gray-800 dark:hover:bg-gray-700">
+      <button type="submit" class="px-4 py-2 rounded border bg-white hover:bg-gray-50">
         Load demo data
       </button>
     </form>
 
-    <!-- LATEST FINDINGS -->
+    <!-- Latest findings table -->
     <section class="card p-4">
       <div class="flex items-center justify-between mb-2">
         <h2 class="text-lg font-semibold">Latest findings</h2>
         <a href="/export_findings.csv" class="text-sm underline">Export CSV</a>
-<form action="/export_to_splunk" method="post" class="inline">
-  <button class="underline text-sm">Export to Splunk</button>
-</form>
-
       </div>
 
       <div class="overflow-x-auto -mx-2 sm:mx-0">
         <table class="table striped min-w-full text-sm">
           <thead>
-            <tr class="text-left border-b border-gray-200 dark:border-gray-700">
+            <tr class="text-left border-b">
               <th class="px-4 py-2">Time</th>
               <th class="px-4 py-2">Rule</th>
               <th class="px-4 py-2">Severity</th>
@@ -98,7 +71,7 @@
               <th class="px-4 py-2 hidden md:table-cell">Host</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+          <tbody class="divide-y">
             {% for f in latest %}
             <tr>
               <td class="px-4 py-2">{{ f.ts }}</td>
@@ -116,63 +89,42 @@
               <td class="px-4 py-2 hidden md:table-cell">{{ f.user }}</td>
               <td class="px-4 py-2 hidden md:table-cell">{{ f.host }}</td>
             </tr>
-            <!-- Mobile-only stacked extras -->
+            <!-- Mobile stacked extras -->
             <tr class="sm:hidden">
-              <td colspan="3" class="px-4 pb-4 pt-0 text-xs text-gray-600 dark:text-gray-300">
+              <td colspan="3" class="px-4 pb-4 pt-0 text-xs text-gray-600">
                 <div><span class="font-semibold">User:</span> {{ f.user }}</div>
                 <div><span class="font-semibold">Host:</span> {{ f.host }}</div>
                 <div class="mt-1"><span class="font-semibold">Context:</span> {{ f.context }}</div>
               </td>
             </tr>
             {% endfor %}
+            {% if latest|length == 0 %}
+            <tr><td colspan="6" class="px-4 py-6 text-center text-gray-500">No findings yet. Load demo data above.</td></tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
     </section>
 
-    <!-- Findings by Rule CHART -->
+    <!-- Findings by Rule chart -->
     <section class="card p-4 mt-6">
-      <div class="flex items-center justify-between mb-2">
-        <h2 class="text-lg font-semibold">Findings by rule</h2>
-      </div>
-      <div class="w-full overflow-x-auto" style="height: 280px;">
+      <h2 class="text-lg font-semibold mb-2">Findings by rule</h2>
+      <div class="w-full" style="height: 280px;">
         <canvas id="ruleChart"></canvas>
       </div>
     </section>
   </main>
 
-  <!-- SCRIPTS -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
   <script>
-    // Mobile menu toggle
-    document.getElementById('menuBtn')?.addEventListener('click', ()=>{
-      document.getElementById('mobileNav').classList.toggle('hidden');
-    });
-
-    // Dark mode persistence (desktop & mobile buttons)
-    (function(){
-      const k='ts.dark';
-      const root = document.documentElement;
-      if(localStorage.getItem(k)==='1') root.classList.add('dark');
-      function tog(){
-        root.classList.toggle('dark');
-        localStorage.setItem(k, root.classList.contains('dark') ? '1' : '0');
-      }
-      document.getElementById('darkToggle')?.addEventListener('click', tog);
-      document.getElementById('darkToggleM')?.addEventListener('click', tog);
-    })();
-
-    // Singleton chart init (prevents duplicates)
+    // Singleton chart
     window.tsCharts = window.tsCharts || {};
     (async function () {
       try {
         const el = document.getElementById('ruleChart');
         if (!el) return;
         const ctx = el.getContext('2d');
-
-        if (window.tsCharts.ruleChart && typeof window.tsCharts.ruleChart.destroy === 'function') {
-          window.tsCharts.ruleChart.destroy();
-        }
+        if (window.tsCharts.ruleChart?.destroy) window.tsCharts.ruleChart.destroy();
 
         const res = await fetch('/stats');
         const data = await res.json();
@@ -181,20 +133,14 @@
 
         window.tsCharts.ruleChart = new Chart(ctx, {
           type: 'bar',
-          data: {
-            labels,
-            datasets: [{ label: 'Findings', data: counts }]
-          },
+          data: { labels, datasets: [{ label: 'Findings', data: counts }] },
           options: {
-            responsive: true,
-            maintainAspectRatio: false,
+            responsive: true, maintainAspectRatio: false,
             scales: { y: { beginAtZero: true, precision: 0 } },
             plugins: { legend: { display: false } }
           }
         });
-      } catch (e) {
-        console.error('stats fetch failed', e);
-      }
+      } catch (e) { console.error('stats fetch failed', e); }
     })();
   </script>
 </body>
