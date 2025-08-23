@@ -297,6 +297,43 @@ def stats(db: Session = Depends(get_db)):
     rows = db.query(Finding.rule, func.count(Finding.id)).group_by(Finding.rule).all()
     return {"by_rule": [{"rule": r, "count": c} for r, c in rows]}
 
+@app.get("/export_events.csv")
+def export_events(db: Session = Depends(get_db)):
+    rows = db.query(Event).order_by(Event.ts.asc()).all()
+    def gen():
+        yield "ts,host,user,src_ip,action,details,geo_lat,geo_lon\r\n"
+        for e in rows:
+            details = (e.details or "").replace('"', "'").replace("\r", " ").replace("\n", " ")
+            ts = e.ts.isoformat() if e.ts else ""
+            lat = "" if e.geo_lat is None else e.geo_lat
+            lon = "" if e.geo_lon is None else e.geo_lon
+            yield f'{ts},{e.host},{e.user},{e.src_ip},{e.action},"{details}",{lat},{lon}\r\n'
+    return StreamingResponse(
+        gen(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=events.csv"}
+    )
+
+@app.get("/export_findings.csv")
+def export_findings(db: Session = Depends(get_db)):
+    # Query all findings oldest→newest for stable CSVs
+    rows = db.query(Finding).order_by(Finding.ts.asc()).all()
+
+    def gen():
+        # header
+        yield "ts,user,host,rule,severity,context\r\n"
+        for f in rows:
+            # sanitize context for CSV (no raw quotes/newlines)
+            ctx = (f.context or "").replace('"', "'").replace("\r", " ").replace("\n", " ")
+            ts = f.ts.isoformat() if f.ts else ""
+            yield f'{ts},{f.user},{f.host},{f.rule},{f.severity},"{ctx}"\r\n'
+
+    return StreamingResponse(
+        gen(),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=findings.csv"}
+    )
+
 @app.get("/events_geo")
 def events_geo(db: Session = Depends(get_db)):
     rows = db.query(Event).filter(Event.geo_lat != None, Event.geo_lon != None).all()
