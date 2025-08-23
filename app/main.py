@@ -6,6 +6,8 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Text, F
 from sqlalchemy.orm import sessionmaker, declarative_base, Session
 from datetime import datetime, timedelta
 import os, csv, io, re, math, requests
+SPLUNK_URL = "https://prd-p-v8lb6.splunkcloud.com:8088/services/collector"
+SPLUNK_TOKEN = os.getenv("SPLUNK_TOKEN", "dfc55283-b21b-4a4d-86fb-841688ef94f0")
 
 # ---------------- Config ----------------
 INGEST_TOKEN = os.getenv("THREATSCOPE_TOKEN", "letmein123")

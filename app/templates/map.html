@@ -27,27 +27,60 @@
   <main class="max-w-6xl mx-auto px-4 py-6">
     <h1 class="text-2xl font-semibold mb-4">Event Map</h1>
     <div id="map" class="bg-white shadow rounded"></div>
+    <p id="mapStatus" class="mt-3 text-sm text-gray-600"></p>
   </main>
 
   <script>
-    const map = L.map('map').setView([28.538, -81.379], 6); // start around Florida
+    const statusEl = document.getElementById('mapStatus');
+    function setStatus(msg) { if (statusEl) statusEl.textContent = msg; }
+
+    // Start roughly around Central Florida
+    const map = L.map('map').setView([28.538, -81.379], 6);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(map);
 
-    fetch('/events_geo')
-      .then(r => r.json())
-      .then(rows => {
-        if (!Array.isArray(rows) || rows.length === 0) return;
+    (async function loadMarkers() {
+      try {
+        setStatus('Loading events…');
+        // Cache-buster to avoid any stale CDN/proxy cache
+        const res = await fetch('/events_geo?t=' + Date.now());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const rows = await res.json();
+
+        if (!Array.isArray(rows) || rows.length === 0) {
+          setStatus('No geo-tagged events yet. Click "Load demo data" on Home, then refresh.');
+          return;
+        }
+
         const group = L.featureGroup();
+        let count = 0;
         rows.forEach(r => {
-          const m = L.marker([r.lat, r.lon]).bindPopup(
-            `<b>${r.user}@${r.host}</b><br/>${r.action}<br/><span style="font-size:12px">${r.ts}</span><br/>${r.details || ''}`
-          );
-          group.addLayer(m);
+          const lat = Number(r.lat);
+          const lon = Number(r.lon);
+          if (Number.isFinite(lat) && Number.isFinite(lon)) {
+            const popup = `
+              <b>${(r.user || 'unknown')}@${(r.host || 'host')}</b><br/>
+              ${r.action || ''}<br/>
+              <span style="font-size:12px">${r.ts || ''}</span><br/>
+              ${(r.details || '').toString().slice(0, 200)}
+            `;
+            group.addLayer(L.marker([lat, lon]).bindPopup(popup));
+            count++;
+          }
         });
+
+        if (count === 0) {
+          setStatus('Events loaded but none had coordinates. Seed demo data and try again.');
+          return;
+        }
+
         group.addTo(map);
         map.fitBounds(group.getBounds().pad(0.2));
-      })
-      .catch(e => console.error(e));
+        setStatus(`Loaded ${count} events.`);
+      } catch (e) {
+        console.error('Map error:', e);
+        setStatus('Failed to load events for map. Check browser console and /events_geo.');
+      }
+    })();
   </script>
 </body>
 </html>
