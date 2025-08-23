@@ -299,6 +299,26 @@ def stats(db: Session = Depends(get_db)):
 
 @app.get("/events_geo")
 def events_geo(db: Session = Depends(get_db)):
+    rows = db.query(Event).filter(Event.geo_lat != None, Event.geo_lon != None).all()
+    return [
+        {
+            "ts": e.ts.isoformat(),
+            "user": e.user,
+            "host": e.host,
+            "src_ip": e.src_ip,
+            "action": e.action,
+            "details": e.details,
+            "lat": e.geo_lat,
+            "lon": e.geo_lon,
+        }
+        for e in rows
+    ]
+@app.get("/map", response_class=HTMLResponse)
+def map_view(request: Request):
+    return templates.TemplateResponse("map.html", {"request": request})
+
+@app.get("/events_geo")
+def events_geo(db: Session = Depends(get_db)):
     rows = db.query(Event).filter(Event.geo_lat.isnot(None), Event.geo_lon.isnot(None))\
             .order_by(Event.ts.desc()).limit(1000).all()
     return [
