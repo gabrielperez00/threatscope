@@ -1,22 +1,51 @@
-<table class="table min-w-full text-sm">
-  <thead><tr><th>Time</th><th>User</th><th>Host</th><th>Action</th><th>Details</th></tr></thead>
-  <tbody>
-  {% for e in rows %}
-    <tr>
-      <td>{{ e.ts }}</td><td>{{ e.user }}</td><td>{{ e.host }}</td><td>{{ e.action }}</td><td>{{ e.details }}</td>
-    </tr>
-  {% endfor %}
-  </tbody>
-</table>
-
-<div class="flex justify-between mt-2 text-sm">
-  <div>Total {{ total }} | Page {{ page }}</div>
-  <div>
-    {% if page>1 %}
-      <a href="/hunt_table?q={{ q }}&user={{ user }}&host={{ host }}&spl={{ spl }}&page={{ page-1 }}&page_size={{ page_size }}">Prev</a>
-    {% endif %}
-    {% if (page*page_size)<total %}
-      <a href="/hunt_table?q={{ q }}&user={{ user }}&host={{ host }}&spl={{ spl }}&page={{ page+1 }}&page_size={{ page_size }}">Next</a>
-    {% endif %}
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="text-gray-900">
+  <div class="overflow-x-auto">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="text-left border-b">
+          <th class="px-3 py-2">Time</th>
+          <th class="px-3 py-2">User</th>
+          <th class="px-3 py-2">Host</th>
+          <th class="px-3 py-2">Action</th>
+          <th class="px-3 py-2">Details</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y">
+        {% for e in rows %}
+        <tr>
+          <td class="px-3 py-2">{{ e.ts }}</td>
+          <td class="px-3 py-2">{{ e.user }}</td>
+          <td class="px-3 py-2">{{ e.host }}</td>
+          <td class="px-3 py-2">{{ e.action }}</td>
+          <td class="px-3 py-2">{{ e.details }}</td>
+        </tr>
+        {% endfor %}
+        {% if rows|length == 0 %}
+        <tr><td colspan="5" class="px-3 py-6 text-center text-gray-500">No results</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
-</div>
+
+  <!-- Pagination -->
+  <div class="flex items-center justify-between mt-3 px-3 text-sm">
+    <div>Total {{ total or 0 }} | Page {{ page or 1 }}</div>
+    <div class="space-x-3">
+      {% if page>1 %}
+        <a class="underline"
+           href="/hunt_table?q={{ q }}&user={{ user }}&host={{ host }}&spl={{ spl }}&page={{ page-1 }}&page_size={{ page_size }}">Prev</a>
+      {% endif %}
+      {% if (page*page_size) < total %}
+        <a class="underline"
+           href="/hunt_table?q={{ q }}&user={{ user }}&host={{ host }}&spl={{ spl }}&page={{ page+1 }}&page_size={{ page_size }}">Next</a>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

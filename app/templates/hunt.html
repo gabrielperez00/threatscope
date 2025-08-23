@@ -1,19 +1,63 @@
-{% extends "base.html" %}
-{% block content %}
-<h2 class="text-xl font-bold mb-4">Hunt Logs</h2>
-<form method="get" action="/hunt" class="card p-4 mb-4">
-  <label class="block text-sm mb-1">SPL-style query</label>
-  <input name="spl" value="{{ spl or '' }}" placeholder='user=alex action=login_fail "invalid password"'
-         class="w-full border rounded px-3 py-2 mb-3">
-  <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-    <input name="q" value="{{ q or '' }}" placeholder="details contains" class="w-full border rounded px-3 py-2">
-    <input name="user" value="{{ user or '' }}" placeholder="user" class="w-full border rounded px-3 py-2">
-    <input name="host" value="{{ host or '' }}" placeholder="host" class="w-full border rounded px-3 py-2">
-  </div>
-  <div class="mt-3"><button class="px-4 py-2 border rounded">Apply</button></div>
-</form>
-<div class="card">
-  <iframe src="/hunt_table?q={{ q }}&user={{ user }}&host={{ host }}&spl={{ spl }}" 
-          class="w-full" style="height:70vh; border:0;"></iframe>
-</div>
-{% endblock %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ThreatScope – Hunt</title>
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link href="/static/site.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <header class="border-b bg-gray-900 text-white">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex gap-4 items-center">
+      <a href="/" class="font-semibold">ThreatScope</a>
+      <nav class="text-sm space-x-4">
+        <a href="/" class="opacity-90 hover:opacity-100">Home</a>
+        <a href="/hunt" class="opacity-100 underline">Hunt</a>
+        <a href="/map" class="opacity-90 hover:opacity-100">Map</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+    <h1 class="text-2xl font-semibold mb-4">Hunt</h1>
+
+    <!-- Filters -->
+    <form method="get" action="/hunt" class="bg-white shadow rounded p-4 mb-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">SPL‑style query</label>
+          <input name="spl" value="{{ spl or '' }}" placeholder='user=alex action=login_fail "invalid password"'
+                 class="w-full border rounded px-3 py-2">
+          <p class="text-xs mt-1 text-gray-500">
+            Supports key=value, quotes, wildcards (*). Keys: user, host, src_ip, action, details.
+          </p>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-600 mb-1">Quick filters (optional)</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <input name="q" value="{{ q or '' }}" placeholder="details contains" class="w-full border rounded px-3 py-2">
+            <input name="user" value="{{ user or '' }}" placeholder="user" class="w-full border rounded px-3 py-2">
+            <input name="host" value="{{ host or '' }}" placeholder="host" class="w-full border rounded px-3 py-2">
+          </div>
+        </div>
+      </div>
+      <div class="mt-3 flex items-center gap-3">
+        <button class="px-4 py-2 rounded border">Apply</button>
+        <a class="text-sm underline" href="/hunt">Reset</a>
+      </div>
+    </form>
+
+    <!-- Results iframe -->
+    <div class="bg-white shadow rounded overflow-hidden">
+      <iframe
+        id="huntFrame"
+        src="/hunt_table?q={{ q }}&user={{ user }}&host={{ host }}&spl={{ spl }}"
+        class="w-full"
+        style="height: 70vh; min-height: 420px; border: 0;"
+        title="Hunt results"></iframe>
+    </div>
+  </main>
+</body>
+</html>
